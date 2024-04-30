@@ -9,9 +9,6 @@ coefficients = [
     [0.002, 0.003, 0],
 ]
 
-options = SimulateOptions()
 
-simulate(
-    initial_populations, growth_rates, coefficients, "pred1_mid1_prey1-a.png", options
-)
+simulate(initial_populations, growth_rates, coefficients, "pred1_mid1_prey1-a")
 plt.show()

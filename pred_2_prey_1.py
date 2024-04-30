@@ -10,8 +10,14 @@ coefficients = [
 ]
 
 options = SimulateOptions()
-options.linewidth = 1
-options.include_legend = False
+options.euler_step = 0.002
+options.max_time = 100
 
-simulate(initial_populations, growth_rates, coefficients, "pred_2_prey_1.png", options)
+simulate(
+    initial_populations,
+    growth_rates,
+    coefficients,
+    "pred_2_prey_1",
+    options=options,
+)
 plt.show()

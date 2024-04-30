@@ -1,8 +1,10 @@
-from os import path
+from os import path, makedirs
 
 
 def write_meta(growth_rates, coefficients, solname: str):
     meta_file = path.join("out", solname + "-meta.txt")
+    if not path.isdir(path.dirname(meta_file)):
+        makedirs(path.dirname(meta_file))
     with open(meta_file, "w") as file:
         for s1 in range(len(growth_rates)):
             growth = f"G_{s1+1} "
