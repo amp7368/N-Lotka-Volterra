@@ -70,7 +70,7 @@ Diagonal is always 0. Growth rates are really what go in the diagnol but it's ea
 
 
 ### Pred-2 Prey-1
-![[pred_2_prey_1-plot.png]]
+![Pred2_Prey1](./assets/Pred2_Prey1.png]]
 
 
 # Implementation
@@ -84,7 +84,7 @@ Configuration of Euler's method is in `simulate.py` using optional SimulationOpt
 	Derived from euler_step and max_time: `iterations = max_time / euler_step`
 ## Formula
 
-![[Formula.png]]
+![Formula](./assets/Formula.png)
 Formula from Lalith (pg 7).
 ## Color-scale
 Represents the growth rate with green being the greatest growth rate, yellow being zero growth rate, and red being the most negative growth rate
@@ -162,7 +162,7 @@ Surviving Populations:
 | 32% survived | 57% survived |
 | 65% survived | 55% survived |
 ```
-![[Discussion_Example_1.png]]
+![Discussion Example 1](./assets/Discussion_Example_1.png)
 ## Discussion Example 2
 vary_independence.py
 random_simulation(
@@ -181,7 +181,7 @@ Surviving Populations:
 | 47% survived |  2% survived |
 | 52% survived |  6% survived |
 ```
-![[Discussion_Example_2.png]]
+![Discussion Example 2](./assets/Discussion_Example_2.png)
 # Future Work
 - I really want to understand how network structure impacts the stability of the simulation. Currently connections are in a random uniform distribution.
 - Accelerate the computation with a GPU and multithreading.
