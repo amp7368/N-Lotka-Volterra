@@ -1,0 +1,22 @@
+{
+    "plot": {
+        "include_legend": false,
+        "linewidth": 1,
+        "round_to_ticks": 5000
+    },
+    "accuracy": {
+        "euler_step": 0.005,
+        "max_time": 200,
+        "extinct_if_below": 0.0000000000001
+    },
+    "populations": {
+        "initial_populations": [50, 10, 5],
+        "growth_rates": [0.25, -0.5, -0.5],
+        "introduced_at": [0, 0, 0],
+        "coefficients": [
+            [0, -0.04, -0.04],
+            [0.04, 0, -0.02],
+            [0.02, 0.04, 0]
+        ]
+    }
+}

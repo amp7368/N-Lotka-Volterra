@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from os import path
-from random_simulation import random_simulation
+from examples.random.random_simulation import random_simulation
 
-if __name__ == "__main__":
+
+def run_vary_independence():
     fig, axs = plt.subplots(5, 2)
     survivors = np.arange(10).reshape((5, 2))
 
@@ -15,7 +16,7 @@ if __name__ == "__main__":
             print(f"({int(ratio*100)}%) Independence")
             solname = path.join("vary_independence", f"indep_{int(ratio*100)}")
             surv = random_simulation(
-                axs[y, x], solname, independence_ratio=ratio, species_count=200
+                axs[y, x], solname, independence_ratio=ratio, species_count=10
             )
             survivors[y, x] = int(round(surv, 2) * 100)
 

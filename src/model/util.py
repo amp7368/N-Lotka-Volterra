@@ -1,3 +1,6 @@
+from model.simulation_options import SimulationAccuracy
+
+
 def progress_bar(
     iterable, prefix, suffix, decimals=1, length=100, fill="=", printEnd="\r"
 ):
@@ -17,7 +20,7 @@ def progress_bar(
     total = len(iterable)
 
     # Progress Bar Printing Function
-    def printProgressBar(iteration):
+    def print_progress_bar(iteration):
         percent = ("{0:." + str(decimals) + "f}").format(
             100 * (iteration / float(total))
         )
@@ -26,21 +29,26 @@ def progress_bar(
         print(f"\r{prefix()} |{bar}| {suffix(iteration,percent)}", end=printEnd)
 
     # Initial Call
-    printProgressBar(0)
+    print_progress_bar(0)
     # Update Progress Bar
+    increment = len(iterable) / 100
     for i, item in enumerate(iterable):
         yield item
-        printProgressBar(i + 1)
+
+        if i + 1 == len(iterable) or i % increment == 0:
+            print_progress_bar(i + 1)
     # Print New Line on Complete
     print()
 
 
-def simulation_progress_bar(euler_step, max_time, last_generation_supplier):
+def simulation_progress_bar(accuracy: SimulationAccuracy, last_gen_supplier):
+    euler_step = accuracy.euler_step
+    max_time = accuracy.max_time
     iterations = int(max_time / euler_step)
 
     def prefix():
         surviving_species = 0
-        population = last_generation_supplier()
+        population = last_gen_supplier()
         for spec in population:
             if spec != 0:
                 surviving_species += 1
@@ -67,24 +75,3 @@ def print_populations(population):
             print(f"Species P_{species+1} - (Extinct)")
 
     print(f"\n{surviving_species} have survived to the end of the simulation")
-
-
-def calc_color(percentage):
-    red = (1, 0, 0)
-    yellow = (1, 1, 0)
-    green = (0, 1, 0)
-    if percentage < 0:
-        return interpolate(yellow, red, -percentage)
-    return interpolate(yellow, green, percentage)
-
-
-def interpolate(color1, color2, fraction):
-    r = interpolate_channel(color1[0], color2[0], fraction)
-    g = interpolate_channel(color1[1], color2[1], fraction)
-    b = interpolate_channel(color1[2], color2[2], fraction)
-
-    return (r, g, b)
-
-
-def interpolate_channel(d1, d2, fraction):
-    return d1 + (d2 - d1) * fraction

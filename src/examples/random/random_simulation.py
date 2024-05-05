@@ -1,21 +1,20 @@
 from random import gauss
-from simulate import simulate, SimulateOptions
-from write_simulation import write_simulation, write_meta
+from model.simulate import simulate, SimulateOptions
+from model.write_simulation import write_generations_csv, write_meta
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 
 
 def random_simulation(
     plot,
     solname,
-    species_count=100,
+    species_count=200,
     independence_ratio=0.1,
     coeff_mean=0.2,
     growth_scale=1,
-    growth_stddev=0.001,
+    growth_stddev=0.01,
     coeff_prey_stddev=0.5,
-    coeff_predator_stddev=0.15,
+    coeff_predator_stddev=0.10,
 ):
     """
     species_count: number of species to generate
@@ -90,14 +89,14 @@ def random_simulation(
         plot=plot,
     )
 
-    write_simulation(simulation, solname)
+    # write_simulation(simulation, solname)
     survivors = 0
-    for species in simulation[-1]:
+    for species in simulation[:, -1]:
         if species != 0:
             survivors += 1
     return survivors / species_count
 
 
-if __name__ == "__main__":
-    random_simulation(plt, "randomness", independence_ratio=0.50)
+def run_random_simulation():
+    random_simulation(plt, "randomness", independence_ratio=0.00, species_count=10)
     plt.show()
