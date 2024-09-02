@@ -1,23 +1,33 @@
-from model.simulate import simulate_command
-from model.simulation_options import SimulationOptions
-from nlv_args import NLVArgs, merge_obj, parse_args
+from argparse import ArgumentParser, _SubParsersAction
+
+from args.base_command import parse_base_args
+from args.subcommand.generate_command import parse_generate_args
+from args.subcommand.simulate_command import parse_simulate_args
 
 
 def main():
-    args: NLVArgs = parse_args()
+    parser = ArgumentParser(
+        prog="N-Lotka Volterra",
+        description="Simulate Lotka Volterra models with N species",
+    )
+    subparsers: _SubParsersAction[ArgumentParser] = parser.add_subparsers(required=True)
 
-    for i, config in enumerate(args.configs):
-        args.current_index = i
-        match args.action:
-            case "simulate":
-                args.configs[i] = merge_obj(SimulationOptions(), config)
-                simulation = simulate_command(args)
+    simulate_parser: ArgumentParser = subparsers.add_parser(
+        name="simulate",
+        description="Run a N-Lotka-Volterra simulation",
+    )
+    parse_base_args(simulate_parser)
+    parse_simulate_args(simulate_parser)
 
-            case "generate":
-                
-                pass
-                
-                # run_random()
+    generate_parser: ArgumentParser = subparsers.add_parser(
+        name="generate",
+        description="Generate a random model N-Lotka-Volterra simulation",
+    )
+    parse_generate_args(generate_parser)
+    parse_base_args(generate_parser)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":

@@ -1,51 +1,58 @@
-import argparse
 import json
-import os
-from enum import StrEnum
-from os import path
+from argparse import ArgumentParser
+from os import makedirs, path
 from types import SimpleNamespace
 from typing import List
 
-NLV_Action = StrEnum("simulate", "generate")
 
-
-class RawNLVArgs:
+class BaseRawNLVArgs:
     config_files: List[str]
-    action: NLV_Action
     outdir: List[str] | None
     outprefix: List[str] | None
-    trial: int | None
     interactive: bool
 
+    def normalize(self):
+        if not self.outdir:
+            self.outdir = []
+        elif len(self.outdir) == 1:
+            self.outdir *= len(self.config_files)
+            for i, config in enumerate(self.config_files):
+                subdir, ext = path.splitext(path.basename(config))
+                self.outdir[i] = path.join(self.outdir[i], subdir)
+        if not self.outprefix:
+            self.outprefix = []
+        elif len(self.outprefix) == 1:
+            self.outprefix *= len(self.config_files)
+        return self
 
-class NLVArgs[Config]:
+    def outputsuffix(self) -> str:
+        # Might give additional ways to add a suffix later
+        return ""
+
+
+class BaseNLVArgs[Config]:
     current_index: int
     configs: List[Config]
-    action: NLV_Action
     output: List[str]
     outputsuffix: str
     interactive: bool
 
-    def __init__(self, raw: RawNLVArgs) -> None:
-        self.current_index = 0
+    def __init__(self, raw: BaseRawNLVArgs) -> None:
+        self.current_index = -1
         self.configs = []
-        self.action = raw.action
         self.output = []
         self.interactive = raw.interactive
-        if raw.trial == None:
-            self.outputsuffix = ""
-        else:
-            self.outputsuffix = f"-{raw.trial}"
+        self.outputsuffix = raw.outputsuffix()
 
         # Load config(s)
         for config_i, config_file in enumerate(raw.config_files):
 
             with open(config_file, "r") as file:
                 loaded = json.load(file, object_hook=lambda d: SimpleNamespace(**d))
-                self.configs.append(loaded)
+                self.configs.append(self._generate_config(loaded))
                 self._append_output(config_i, raw)
 
-    def _append_output(self, config_i: int, raw: RawNLVArgs):
+    def _append_output(self, config_i: int, raw: BaseRawNLVArgs):
         # Verify outdir and outprefix have at least the same length as self.config
         if len(raw.outdir) <= config_i:
             folder, path_ext = path.splitext(raw.config_files[config_i])
@@ -66,45 +73,32 @@ class NLVArgs[Config]:
             return
 
         try:
-            os.makedirs(folder)
+            makedirs(folder)
         except:
             raise FileExistsError(
                 f"Error creating directory: {folder}! Verify that {raw.outprefix[config_i]} has "
                 + "an extension, so a folder with  name can be made."
             )
 
-    def config(self):
+    def _generate_config(self, loaded) -> Config: ...
+
+    def next(self) -> bool:
+        self.current_index += 1
+        return self.current_index < len(self.configs)
+
+    def config(self) -> Config:
         return self.configs[self.current_index]
 
-    def output_file(self, f: str, ext: str):
+    def output_file(self, f: str, ext: str) -> str:
         output = self.output[self.current_index]
         return f"{output}-{f}{self.outputsuffix}.{ext}"
 
 
-def _normalize_rawargs(raw):
-    if not raw.outdir:
-        raw.outdir = []
-    elif len(raw.outdir) == 1:
-        raw.outdir *= len(raw.config_files)
-        for i, config in enumerate(raw.config_files):
-            subdir, ext = path.splitext(path.basename(config))
-            raw.outdir[i] = path.join(raw.outdir[i], subdir)
-    if not raw.outprefix:
-        raw.outprefix = []
-    elif len(raw.outprefix) == 1:
-        raw.outprefix *= len(raw.config_files)
-    return raw
-
-
-def parse_args() -> NLVArgs:
-    parser = argparse.ArgumentParser(
-        prog="N-Lotka Volterra",
-        description="Simulate Lotka Volterra models with N species",
-    )
+def parse_base_args(parser: ArgumentParser) -> None:
     parser.add_argument(
         "--interactive",
-        "-ui",
-        help="Whether the program should be interactive and stop on plots",
+        "-it",
+        help="Whether the program should be interactive and display plots",
         default=False,
         action="store_true",
     )
@@ -115,13 +109,6 @@ def parse_args() -> NLVArgs:
         dest="config_files",
         required=True,
         help="The configuration file(s) used as input for the chosen action",
-    )
-    parser.add_argument(
-        "--action",
-        "-a",
-        default="simulate",
-        choices=["simulate", "generate"],
-        help="The action to perform",
     )
     parser.add_argument(
         "--outprefix",
@@ -137,14 +124,6 @@ def parse_args() -> NLVArgs:
         help="""Output directory. Note that --outprefix defaults to filename of -f
         Example: -f inp.json -o example/subfolder produces files: [example/subfolder/inp-config-[trial].json, example/subfolder/inp-edges.csv, example/subfolder/inp-foodweb.png, ...]""",
     )
-    parser.add_argument(
-        "--trial",
-        "-t",
-        help="The trial of this iteration. Appended to --output prefix",
-        type=str,
-    )
-    args = _normalize_rawargs(parser.parse_args())
-    return NLVArgs(args)
 
 
 def merge_obj(merge_onto: object, merge_from: SimpleNamespace, path=[]):

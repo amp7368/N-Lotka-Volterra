@@ -2,6 +2,13 @@ from numpy import ndarray
 from typing import List
 
 
+class SimulationPopulations:
+    initial_populations: List[float]
+    growth_rates: List[float]
+    introduced_at: List[float]
+    coefficients: List[List[float]]
+
+
 class SimulationPlot:
     include_legend: bool
     linewidth: int
@@ -34,13 +41,6 @@ class SimulationAccuracy:
         return int(self.max_time / self.euler_step)
 
 
-class SimulationPopulations:
-    initial_populations: List[float]
-    growth_rates: List[float]
-    introduced_at: List[float]
-    coefficients: List[List[float]]
-
-
 class SimulationOptions:
     populations: SimulationPopulations
     plot: SimulationPlot
@@ -59,7 +59,11 @@ class Coefficients(ndarray[ndarray[float]]):
     pass
 
 
-type Generation = ndarray[float]
+class Generation(ndarray[float]):
+    pass
+
+
+# type Generation = ndarray[float]
 
 
 class Generations(ndarray[Generation]):

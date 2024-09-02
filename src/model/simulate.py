@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from model.simulation_options import (
+from args.subcommand.simulate_args import SimulateNLVArgs
+from model.simulate_options import (
     Generation,
     Generations,
     SimulationAccuracy,
@@ -11,7 +12,6 @@ from model.simulation_options import (
 )
 from model.util import simulation_progress_bar
 from model.write_simulation import write_file, write_generations_csv, write_meta_csv
-from nlv_args import NLVArgs
 from util.color_util import calc_color
 
 
@@ -29,7 +29,7 @@ def simulate(options=SimulationOptions()):
     generations[:, 0] = initial_populations
     last_generation: Generation = initial_populations
 
-    def last_gen_supplier():
+    def last_gen_supplier() -> Generation:
         return last_generation
 
     for t in simulation_progress_bar(accuracy, last_gen_supplier):
@@ -90,7 +90,7 @@ def plot_generations(
         if perc_herbivore < 0:
             perc_herbivore /= -min(growth_rates)
         else:
-            perc_herbivore /= max(growth_rates)
+            perc_herbivore /= max(1, max(growth_rates))
         color = calc_color(perc_herbivore)
 
         # This commentted code kinda looks like a power law distribution?
@@ -117,7 +117,7 @@ def plot_generations(
         plot.show()
 
 
-def simulate_command(args: NLVArgs[SimulationOptions]):
+def run_simulate(args: SimulateNLVArgs):
     out_config_file = args.output_file("config", "json")
     edges_file = args.output_file("edges", "csv")
     nodes_file = args.output_file("nodes", "csv")

@@ -1,8 +1,19 @@
-from model.simulation_options import SimulationAccuracy
+import os
+from typing import Callable, Iterable
+
+import numpy as np
+
+from model.simulate_options import Generation, SimulationAccuracy
 
 
 def progress_bar(
-    iterable, prefix, suffix, decimals=1, length=100, fill="=", printEnd="\r"
+    iterable: Iterable,
+    prefix: Callable[[], str],
+    suffix: Callable[[int, float], str],
+    decimals: int = 1,
+    full_length: int | None = None,
+    fill: str = "=",
+    printEnd: str = "\r",
 ):
     """
     Call in a loop to create terminal progress bar
@@ -10,22 +21,29 @@ def progress_bar(
 
     @params:
         iterable    - Required  : iterable object (Iterable)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
+        prefix      - Required  : prefix string (Str)
+        suffix      - Required  : suffix string (Str)
         decimals    - Optional  : positive number of decimals in percent complete (Int)
         length      - Optional  : character length of bar (Int)
         fill        - Optional  : bar fill character (Str)
         printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
     """
-    total = len(iterable)
+    total = float(len(iterable))
 
     # Progress Bar Printing Function
     def print_progress_bar(iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(
-            100 * (iteration / float(total))
-        )
-        filledLength = int(length * iteration // total)
-        bar = fill * filledLength + "-" * (length - filledLength)
+        start = f"\r{prefix()} |"
+        end = f"| {suffix(0,0)}"
+        padding_length = len(start) + len(end) + 10
+
+        bar_length = full_length if full_length else os.get_terminal_size().columns
+        # Must be at least 10 char wide
+        bar_length = max(10, bar_length - padding_length)
+
+        filled_length = int(bar_length * iteration / total)
+        bar = fill * filled_length + "-" * (bar_length - filled_length)
+        percent = round(100 * iteration / total, decimals)
+
         print(f"\r{prefix()} |{bar}| {suffix(iteration,percent)}", end=printEnd)
 
     # Initial Call
@@ -35,23 +53,20 @@ def progress_bar(
     for i, item in enumerate(iterable):
         yield item
 
-        if i + 1 == len(iterable) or i % increment == 0:
+        if i >= total - 3 or i % increment == 0:
             print_progress_bar(i + 1)
     # Print New Line on Complete
     print()
 
 
-def simulation_progress_bar(accuracy: SimulationAccuracy, last_gen_supplier):
+def simulation_progress_bar(accuracy: SimulationAccuracy, last_gen):
     euler_step = accuracy.euler_step
     max_time = accuracy.max_time
     iterations = int(max_time / euler_step)
 
-    def prefix():
-        surviving_species = 0
-        population = last_gen_supplier()
-        for spec in population:
-            if spec != 0:
-                surviving_species += 1
+    def prefix() -> str:
+        population: Generation = last_gen()
+        surviving_species = np.count_nonzero(population)
         return f"Surviving Species ({surviving_species}/{len(population)})"
 
     def suffix(t: int, perc: float):
