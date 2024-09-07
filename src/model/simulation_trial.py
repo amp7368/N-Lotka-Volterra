@@ -29,17 +29,17 @@ class SimulationAccuracy:
         self.euler_step = euler_step
         self.max_time = max_time
         self.extinct_if_below = extinct_if_below
-        self.goal_rounded_euler_step = goal_rounded_euler_step
-        self.rounded_euler_step = self.steps_in_rounded() * self.euler_step
+        steps_in_rounded = max(1, math.ceil(goal_rounded_euler_step / euler_step))
+        self.rounded_euler_step = steps_in_rounded * euler_step
 
-    def iterations(self):
-        return math.ceil(self.max_time / self.euler_step)
+    def iterations(self) -> int:
+        return self.rounded_iterations() * self.steps_in_rounded()
 
     def steps_in_rounded(self) -> int:
-        return max(1, int(self.goal_rounded_euler_step / self.euler_step))
+        return int(self.rounded_euler_step // self.euler_step)
 
-    def rounded_iterations(self):
-        return math.ceil(self.max_time / self.rounded_euler_step)
+    def rounded_iterations(self) -> int:
+        return int(self.max_time / self.rounded_euler_step)
 
 
 class SimulationTrial:

@@ -1,5 +1,5 @@
 from random import Random
-from typing import List, Tuple, override
+from typing import List, override
 from uuid import UUID
 
 import networkx as nx
@@ -19,9 +19,10 @@ from config.base_parameters import (
     SimulationAccuracyConfig,
     SimulationEpochsConfig,
 )
+from util.random_util import random_float, random_int
 
 
-class TestSettings:
+class SmallWorldSettings:
     branching_factor: int
     height: int
 
@@ -51,8 +52,7 @@ class GuassFactor:
 
 class TestParameters(BaseProgramParameters):
     # Metadata
-    master_seed = None  # "fbd6924d-581c-40a3-9343-bb9da5162263"
-    hold_variable_per_trial: int = 1
+    master_seed: str | None = "76058d35-73c8-499c-a628-7fc01dee37de"
 
     # network structure
     min_branching_factor: int = 5
@@ -74,9 +74,8 @@ class TestParameters(BaseProgramParameters):
     max_symbiotic_relationship: float = 0.0
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(3)
         self.accuracy = SimulationAccuracyConfig()
-        self.accuracy.hold_variable_per_trial = 1
         self.epochs = SimulationEpochsConfig()
 
     @override
@@ -85,35 +84,47 @@ class TestParameters(BaseProgramParameters):
             return None
         return UUID(self.master_seed)
 
-    def _generate_network(self, random: Random, settings: TestSettings) -> Graph:
-        G: Graph = navigable_small_world_graph(
-            10, seed=random.randint(0, int(1e20)), dim=2
-        )
+    def _generate_network(self, random: Random, settings: SmallWorldSettings) -> Graph:
+        G: Graph = navigable_small_world_graph(10, seed=random_int(random), dim=2)
 
-        # nx.draw(G)
-        # plt.show()
-
+        # Verify relationships are not one way.
+        # One-sided relationships are still possible if one node choses a coefficent close to 0
         for node1, node2 in G.edges.keys():
             G.add_edge(node2, node1)
+
         # Edge Attributes
         for node1, node2 in G.edges.keys():
             edge = G.get_edge_data(u=node1, v=node2, default=None)
             reverse = G.get_edge_data(u=node2, v=node1, default=None)
-            if edge is None:
-                continue
+
             # Coefficients between nodes
-            is_predator = random.random() < self.percent_predator
+            if reverse is not None and "weight" in reverse:
+                is_predator = reverse["weight"] > 0
+            else:
+                is_predator = random.random() < self.percent_predator
+
             if is_predator:
                 edge["weight"] = random.random() * self.min_growth_rate
             else:
                 edge["weight"] = random.random() * self.max_growth_rate
-            # cap symbiotic relationships
-            if reverse is not None and "weight" in reverse and reverse["weight"] > 0:
-                edge["weight"] = min(edge["weight"], self.max_symbiotic_relationship)
+
+        max_predatorness = 0
+        max_preyness = 0
+        for node_id in G.nodes:
+            preyness = 0
+            predatorness = 0
+            for neighbor in G.neighbors(node_id):
+                weight = G.get_edge_data(node_id, neighbor)["weight"]
+                if weight > 0:
+                    predatorness += weight  # self.percent_predator
+                else:
+                    preyness += weight  # 1 - self.percent_predator
+            max_preyness = min(preyness - predatorness, max_preyness)
+            max_predatorness = max(predatorness - preyness, max_predatorness)
 
         # Node Attributes
         for node_id, node in G.nodes.items():
-            node["population"] = self.rand_float(
+            node["population"] = random_float(
                 random, self.min_population, self.max_population
             )
 
@@ -122,32 +133,32 @@ class TestParameters(BaseProgramParameters):
             for neighbor in G.neighbors(node_id):
                 weight = G.get_edge_data(node_id, neighbor)["weight"]
                 if weight > 0:
-                    predatorness += self.percent_predator
+                    predatorness += weight  # self.percent_predator
                 else:
-                    preyness += 1 - self.percent_predator
+                    preyness += weight  # 1 - self.percent_predator
 
             # Create a self edge if one doesn't already exist
             if not G.has_edge(u=node_id, v=node_id):
                 G.add_edge(node_id, node_id)
-            self_edge = G.get_edge_data(u=node_id, v=node_id, default=None)
-            # Set the grwoth rate of each node
+            self_edge = G.get_edge_data(u=node_id, v=node_id)
 
+            # Set the growth rate of each node
             if predatorness == preyness and preyness != 0:
                 if random.random() < 0.5:
                     predatorness += 1e-10
                 else:
                     preyness += 1e-10
             if predatorness > preyness:
-                percent_predator = 1 - (preyness / predatorness)
+                percent_predator = (predatorness - preyness) / (max_predatorness)
                 mean = self.min_growth_rate * percent_predator
-                sigma = min(abs(mean - self.min_growth_rate), abs(mean))
+                sigma = min(abs(self.min_growth_rate - mean), abs(mean))
             elif predatorness < preyness:
-                percent_prey = 1 - (predatorness / preyness)
+                percent_prey = (preyness - preyness) / max_preyness
                 mean = self.max_growth_rate * percent_prey
-                sigma = min(abs(mean - self.max_growth_rate), abs(mean))
+                sigma = min(abs(self.max_growth_rate - mean), abs(mean))
 
             weight = random.gauss(mean, sigma)
-            # print(f"mean {mean:0.5f} | sigma {sigma:.5f} = weight {weight:.5f}")
+            print(f"mean {mean:0.5f} | sigma {sigma:.5f} = weight {weight:.5f}")
             self_edge["weight"] = weight
 
         return G
@@ -166,7 +177,7 @@ class TestParameters(BaseProgramParameters):
 
         networks = []
         for branching_factor, height in zip(*settings):
-            settings = TestSettings(
+            settings = SmallWorldSettings(
                 branching_factor=branching_factor,
                 height=height,
             )
@@ -174,24 +185,10 @@ class TestParameters(BaseProgramParameters):
             networks.append(graph)
         return networks
 
-    def rand_float(self, random: Random, a: float, b: float):
-        lower = min(a, b)
-        upper = max(a, b)
-        return random.random() * (upper - lower) + lower
-
-    def _gen_floats(self, random: Random, min: float, max: float) -> float:
-        return [self.rand_float() for _ in range(self.hold_variable_per_trial)]
-
-    def _gen_ints(self, random: Random, min: int, max: int) -> float:
-        def generate():
-            return random.randrange(min, max + 1)
-
-        return [generate() for _ in range(self.hold_variable_per_trial)]
-
     def _gen_branching_factors(self, random: Random):
-        return self._gen_ints(
+        return self.gen_ints(
             random, self.min_branching_factor, self.max_branching_factor
         )
 
     def _gen_heights(self, random: Random):
-        return self._gen_ints(random, self.min_height, self.max_height)
+        return self.gen_ints(random, self.min_height, self.max_height)

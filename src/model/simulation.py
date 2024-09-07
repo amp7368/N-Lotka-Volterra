@@ -1,4 +1,3 @@
-import hashlib
 from random import Random
 from typing import List
 
@@ -16,8 +15,6 @@ from model.simulation_trial import (
 from util.seed import Seed
 
 MAX_SEED_BYTES = 64
-
-from uuid import UUID, uuid4
 
 
 class Simulation:
@@ -40,34 +37,39 @@ class Simulation:
         self.random = self.seeder.generate_random()
 
     def iteration_generate_trials(self) -> List[SimulationTrial]:
-        accuracy: SimulationAccuracyConfig = self.config.accuracy
-
         # Populations
         network_graphs: List[Graph] = self.config.generate_networks(self.random)
         populations: List[SimulationPopulations] = [
             graph_to_matrix(graph) for graph in network_graphs
         ]
+        # Accuracy
+        accuracy_list = self.iteration_generate_settings()
 
+        # Generate each trial for the generated network
+        trials = []
+        for population in populations:
+            for accuracy in accuracy_list:
+                index = len(trials)
+                trial = SimulationTrial(index, population, accuracy)
+                trials.append(trial)
+        return trials
+
+    def iteration_generate_settings(self) -> List[SimulationAccuracy]:
+        accuracy: SimulationAccuracyConfig = self.config.accuracy
         # Get static accuracy variables
         max_time = accuracy.max_time
         # Generate rest of accuracy variables then mesh
         euler_steps: List[float] = accuracy.gen_euler_steps(self.random)
         extinct_if_belows: List[float] = accuracy.gen_extinct_if_belows(self.random)
-        chosen_settings = np.meshgrid(euler_steps, extinct_if_belows)
-        for i in range(len(chosen_settings)):
-            chosen_settings[i] = chosen_settings[i].flatten()
+        mesh = np.meshgrid(euler_steps, extinct_if_belows)
+        mesh = [m.flatten() for m in mesh]
 
-        trials = []
-        # Generate each trial for the generated network
-        index: int = 0
-        for population in populations:
-            for euler_step, extinct_if_below in zip(*chosen_settings):
-                accuracy = SimulationAccuracy(
-                    euler_step=euler_step,
-                    extinct_if_below=extinct_if_below,
-                    max_time=max_time,
-                )
-                trial = SimulationTrial(index, population, accuracy)
-                trials.append(trial)
-                index += 1
-        return trials
+        accuracy_list = []
+        for settings in zip(*mesh):
+            accuracy = SimulationAccuracy(
+                euler_step=settings[0],
+                extinct_if_below=settings[1],
+                max_time=max_time,
+            )
+            accuracy_list.append(accuracy)
+        return accuracy_list

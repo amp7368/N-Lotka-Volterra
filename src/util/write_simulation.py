@@ -96,26 +96,32 @@ def write_edges_csv(coefficients, file):
             file.write(f"{s},{t},{weight},{prey},{pred},{relation},{directed}\n")
 
 
-def write_generations_csv(simulation, file: str):
-    parent = path.dirname(file)
-    if not path.exists(parent):
-        makedirs(parent)
-    with open(file, "w") as file:
-        for time in simulation:
-            for point in time:
-                file.write(str(point))
-                file.write(",")
-            file.write("\n")
-
-
-def write_generations_csv(simulation: Generations, filename: str):
+def write_generations(simulation: Generations, filename: str):
     parent = path.dirname(filename)
     if not path.exists(parent):
         makedirs(parent)
-    with open(filename, "w") as file:
-        # file.write(simulation.tobytes())
+
+    with open(filename, "wb") as file:
+        last_alive: np.ndarray[int] = np.count_nonzero(simulation, axis=1)
+        species_count = len(last_alive)
+
+        file.write(last_alive.tobytes())
+        for sp in range(species_count):
+            file.write(simulation[sp, :].tobytes())
+
+
+def write_readable_generations_csv(simulation: Generations, filename: str):
+    parent = path.dirname(filename)
+    if not path.exists(parent):
+        makedirs(parent)
+
+    with open(filename, "wb") as file:
+        sp = [str(i) for i in range(len(simulation[0]))]
+        row = ",".join(sp)
+        file.write(row + "\n")
+
         for time in simulation:
             for point in time:
                 file.write(str(point))
-                file.write(",")
-            file.write("\n")
+            row = ",".join([str(point) for point in time])
+            file.write(row + "\n")

@@ -23,14 +23,16 @@ def simulate(trial: SimulationTrial) -> Generations:
 
     species_count: int = len(initial_populations)
 
-    generations: Generations = np.zeros((species_count, accuracy.rounded_iterations()))
+    generations: Generations = np.zeros(
+        (species_count, accuracy.rounded_iterations()), dtype=np.float32
+    )
 
     steps_in_rounded: int = accuracy.steps_in_rounded()
     precise_generation: Generations = np.zeros((species_count, steps_in_rounded))
 
     generations[:, 0] = initial_populations
     last_generation: Generation = initial_populations
-    for t in range(accuracy.iterations()):
+    for t in range(0, accuracy.iterations() - steps_in_rounded):
         change_in_population: np.ndarray[float] = (
             np.squeeze(np.dot(coefficients, last_generation)) + growth_rates
         )
@@ -40,16 +42,7 @@ def simulate(trial: SimulationTrial) -> Generations:
         new_generation = last_generation + change_in_population
         is_infinity = np.logical_or(np.isinf(new_generation), new_generation > 1e30)
         if np.any(is_infinity):
-            # inf_nodes = []
-            # for i in range(species_count):
-            #     if is_infinity[i]:
-            #         inf_nodes.append(i)
-            # for node in inf_nodes:
-            #     print(f"Node {node} is inf with growth {growth_rates[node]}")
-            #     print(coefficients[:, node][coefficients[:, node] != 0])
-            #     print(last_generation[coefficients[:, node] != 0])
-
-            generations[:, t // steps_in_rounded :] = -1
+            generations[:, (t + 1) // steps_in_rounded :] = -1
             break
 
         is_extinct = np.logical_or(
@@ -61,11 +54,11 @@ def simulate(trial: SimulationTrial) -> Generations:
         precise_generation[:, t % steps_in_rounded] = last_generation = new_generation
 
         if (t + 1) % steps_in_rounded == 0:
-            generations[:, t // steps_in_rounded] = precise_generation.mean(axis=1)
-
+            generation_t = (t + 1) // steps_in_rounded
+            generations[:, generation_t] = precise_generation.mean(axis=1)
     np.seterrobj(err)
-    print(f"surviving: = {np.sum(generations[:, -1] != 0)}")
-    # if np.sum(generations[:, -1] != 0) > 0:
-    plot_generations(generations, trial)
+    print(f"survived = {np.sum(generations[:, -1] != 0)}")
+    if np.sum(generations[:, -1] != 0) > 0:
+        plot_generations(generations, trial)
 
     return generations

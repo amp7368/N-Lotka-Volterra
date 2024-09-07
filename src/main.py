@@ -4,18 +4,46 @@ from config.simulation_config import SimulationConfig
 from model.simulation import Simulation
 from model.simulation_trial import SimulationTrial
 from model.simulation_util import simulate
-from util.write_simulation import write_generations_csv, write_meta_csv
+from util.write_simulation import write_generations, write_meta_csv
 
 from datetime import datetime
 from time import time
 
+SHOULD_WRITE_SIMULATIONS: bool = False
+
+
+def run_trial(trial: SimulationTrial, config: SimulationConfig, trial_identifier: str):
+    generations = simulate(trial)
+    seed = config.master_seed.uuid
+    prefix = f"run/{seed}/"
+
+    nodes_file = f"{prefix}{trial_identifier}_nodes_{seed}.json"
+    edges_file = f"{prefix}{trial_identifier}_edges_{seed}.json"
+    write_meta_csv(
+        trial.populations.growth_rates,
+        trial.populations.coefficients,
+        nodes_file,
+        edges_file,
+    )
+
+    if SHOULD_WRITE_SIMULATIONS:
+        file = f"{prefix}{trial_identifier}_generations_{seed}.csv"
+        write_generations(generations, file)
+
+
+def progress(config, epoch, iteration, trial, trials):
+    epoch_progress = f"epoch {epoch}/{config.epochs.epochs-1}"
+    iteration_progress = f"iter {iteration}/{config.epochs.iterations-1}"
+    trial_progress = f"trial {trial.index}/{len(trials)-1}"
+    print(f"Running {epoch_progress}, {iteration_progress}, {trial_progress}")
+
 
 def main():
     start = time()
+    date: str = datetime.now().strftime("%Yy-%Mm-%dd_%Hh-%Mm-%Ss")
 
     config: SimulationConfig = load_arguments()
 
-    date = datetime.now().strftime("%Yy-%Mm-%dd_%Hh-%Mm-%Ss")
     for epoch in range(config.epochs.epochs):
         simulation: Simulation = Simulation(config, epoch)
         for iteration in range(config.epochs.iterations):
@@ -23,27 +51,12 @@ def main():
             simulation.prepare_iteration(iteration)
             trials: List[SimulationTrial] = simulation.iteration_generate_trials()
             for trial in trials:
-                generations = simulate(trial)
-                seed = config.master_seed.uuid
-                prefix = f"out/{seed}/"
-                suffix = (
-                    f"_{epoch+1:04d}ep-{iteration+1:04d}s-{trial.index+1:04d}t_{date}"
-                )
+                progress(config, epoch, iteration, trial, trials)
 
-                file = f"{prefix}generations{suffix}"
-                write_generations_csv(generations, file)
+                trial_identifier = f"{epoch:04d}ep-{iteration:04d}s-{trial.index:04d}t"
+                run_trial(trial, config, trial_identifier)
 
-                nodes_file = f"{prefix}nodes/{seed}_{suffix}"
-                edges_file = f"{prefix}edges/{seed}_{suffix}"
-                write_meta_csv(
-                    trial.populations.growth_rates,
-                    trial.populations.coefficients,
-                    nodes_file,
-                    edges_file,
-                )
-
-    duration = time() - start
-    print(f"Took {duration}s")
+    print(f"Took {time() - start}s")
 
 
 if __name__ == "__main__":
