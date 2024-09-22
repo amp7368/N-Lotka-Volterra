@@ -1,12 +1,14 @@
 from random import Random
-from typing import List
+from typing import List, Tuple
+from uuid import UUID
 
 import numpy as np
 from networkx import Graph
 
 from config.base_parameters import SimulationAccuracyConfig
-from config.simulation_config import SimulationConfig
+from config.parameters_api import ProgramParametersApi
 from model.population_util import graph_to_matrix
+from model.simulation_series_id import SimulationSeriesId
 from model.simulation_trial import (
     SimulationAccuracy,
     SimulationPopulations,
@@ -14,43 +16,47 @@ from model.simulation_trial import (
 )
 from util.seed import Seed
 
-MAX_SEED_BYTES = 64
 
-
-class Simulation:
-    seeder: Seed
-    config: SimulationConfig
+class SimulationSeries:
+    config: ProgramParametersApi
 
     # Per step random
+    series_id: SimulationSeriesId
     random: Random
 
-    def __init__(self, config: SimulationConfig, epoch: int) -> None:
-        self.__generate_seed(config, epoch)
+    def __init__(
+        self, config: ProgramParametersApi, series_id: SimulationSeriesId
+    ) -> None:
         self.config = config
+        self.series_id = series_id
+        self.__generate_random(series_id)
 
-    def __generate_seed(self, config: SimulationConfig, epoch: int) -> None:
-        epoch_bytes = epoch.to_bytes(MAX_SEED_BYTES, "big")
-        self.seeder = config.get_master_seed().generate_seed(epoch_bytes)
-
-    def prepare_iteration(self, iteration: int) -> None:
-        # Use the seeder to seed a new PRNG
-        self.random = self.seeder.generate_random()
+    def __generate_random(self, series_id: SimulationSeriesId) -> None:
+        lst = series_id.to_bytes_list()
+        master_seed: Seed = self.config.get_master_seed()
+        self.random = master_seed.generate_random(*lst)
 
     def iteration_generate_trials(self) -> List[SimulationTrial]:
         # Populations
-        network_graphs: List[Graph] = self.config.generate_networks(self.random)
-        populations: List[SimulationPopulations] = [
-            graph_to_matrix(graph) for graph in network_graphs
-        ]
+        network_graphs: List[Tuple[Graph, object]] = self.config.generate_networks(
+            self.random
+        )
         # Accuracy
         accuracy_list = self.iteration_generate_settings()
 
-        # Generate each trial for the generated network
+        # Generate each set of trials for each generated network
         trials = []
-        for population in populations:
+        for graph, settings in network_graphs:
+            population: SimulationPopulations = graph_to_matrix(graph)
             for accuracy in accuracy_list:
                 index = len(trials)
-                trial = SimulationTrial(index, population, accuracy)
+                trial = SimulationTrial(
+                    self.series_id,
+                    index,
+                    settings,
+                    population,
+                    accuracy,
+                )
                 trials.append(trial)
         return trials
 

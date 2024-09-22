@@ -21,14 +21,6 @@ def plot_generations(generations: Generations, trial: SimulationTrial):
     species_count: int = len(initial_populations)
 
     ticks = accuracy.rounded_iterations()
-    # if plot_opts.round_to_ticks < ticks:
-    #     ticks = plot_opts.round_to_ticks
-    #     rounded = np.zeros((species_count, ticks))
-    #     iter_per_tick = accuracy.iterations() / ticks
-    #     for i in range(ticks):
-    #         lower = int(i * iter_per_tick)
-    #         upper = int(lower + iter_per_tick)
-    #         rounded[:, i] = np.mean(generations[:, lower:upper], axis=1)
     rounded = generations
 
     x = np.arange(0, ticks) * accuracy.rounded_euler_step

@@ -58,7 +58,6 @@ def simulate(trial: SimulationTrial) -> Generations:
             generations[:, generation_t] = precise_generation.mean(axis=1)
     np.seterrobj(err)
     print(f"survived = {np.sum(generations[:, -1] != 0)}")
-    if np.sum(generations[:, -1] != 0) > 0:
-        plot_generations(generations, trial)
+    # plot_generations(generations, trial)
 
     return generations

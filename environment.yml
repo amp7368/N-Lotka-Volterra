@@ -9,3 +9,6 @@ dependencies:
           - matplotlib==3.8.4
           - argparse==1.4.0
           - networkx==3.3
+          - sqlalchemy==2.0.34
+          - asyncio==3.4.3
+          - psycopg2==2.9.9

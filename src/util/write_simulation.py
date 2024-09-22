@@ -1,6 +1,4 @@
-import json
 from os import makedirs, path
-from typing import List
 
 import numpy as np
 
@@ -41,14 +39,6 @@ def write_meta_human(growth_rates, coefficients, solname: str):
                 val = f"{round(c,6)} "
                 file.write(f"{val:<10}")
             file.write("\n")
-
-
-def write_file(json_obj, file: str):
-    with open(file, "w") as file:
-        default = lambda obj: (
-            list(obj) if isinstance(obj, np.ndarray) else obj.__dict__
-        )
-        json.dump(json_obj, file, default=default, indent=4, sort_keys=True)
 
 
 def write_meta_csv(growth_rates, coefficients, nodes_file, edges_file):
