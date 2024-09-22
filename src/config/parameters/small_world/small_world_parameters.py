@@ -1,90 +1,57 @@
 from random import Random
 from typing import List, Tuple, override
-from uuid import UUID
 
-import networkx as nx
 import numpy as np
-from matplotlib import pyplot as plt
-from networkx import (
-    Graph,
-    balanced_tree,
-    binomial_tree,
-    duplication_divergence_graph,
-    navigable_small_world_graph,
-    scale_free_graph,
-)
+from networkx import Graph, navigable_small_world_graph
 
 from config.base_parameters import (
     BaseProgramParameters,
     SimulationAccuracyConfig,
     SimulationEpochsConfig,
 )
-from util.random_util import random_float, random_int
-
-
-class SmallWorldSettings:
-    network_side_length: int
-    network_dim: int
-
-    # Node data
-    percent_predator: float
-    min_population: float = 4
-    max_population: float = 20
-
-    # Coefficent data
-    total_predator_growth_factor: float
-    total_prey_growth_factor: float
-
-    prey_coefficient: float
-    predator_coefficient: float
-
-    def __init__(self) -> None:
-        self.network_dim = 2
-        self.network_side_length = 10
-        self.percent_predator = 0.8
-
-
-class GuassFactor:
-    mean: float
-    sigma: float
-    min_value: float | None
-    max_value: float | None
-
-    def __init__(
-        self,
-        mean: float,
-        sigma: float,
-        min_value: float | None = None,
-        max_value: float | None = None,
-    ) -> None:
-        self.mean = mean
-        self.sigma = sigma
-        self.min_value = min_value
-        self.max_value = max_value
+from config.parameters.small_world.small_world_trial_settings import SmallWorldSettings
+from config.settings_factor import FactorConstant, FactorGenerator
+from config.settings_generator import ConstantSettings, FactorRange, SettingsGenerator
+from util.random_util import random_int
 
 
 class TestParameters(BaseProgramParameters):
     # network structure
-    min_branching_factor: int = 5
-    max_branching_factor: int = 5
-    min_height: int = 4
-    max_height: int = 4
+    network_dim: FactorGenerator[int]
+    network_side_length: FactorGenerator[int]
+
+    # Aggregate Node data
+    percent_predator: FactorGenerator[float]
 
     # Node data
-    min_population: float = 4
-    max_population: float = 20
-
-    percent_predator: float = 0.8
-    min_growth_rate: float = -0.01
-    max_growth_rate: float = 0.01
+    population_range: SettingsGenerator[float]
+    min_growth_rate: FactorGenerator[float]
+    max_growth_rate: FactorGenerator[float]
 
     # Relationships
-    prey_coefficient: float = -0.01
-    predator_coefficient: float = 0.01
-    max_symbiotic_relationship: float = 0.0
+    prey_coefficient: FactorGenerator[float] = -0.01
+    predator_coefficient: FactorGenerator[float] = 0.01
+    max_symbiotic_relationship: FactorGenerator[float] = 0.0
+
+    # Simulation Info
+    epochs: SimulationEpochsConfig
+    accuracy: SimulationAccuracyConfig
 
     def __init__(self) -> None:
-        super().__init__(3)
+        super().__init__()
+        self.network_dim = FactorConstant(2)
+        self.network_side_length = FactorConstant(10)
+
+        self.percent_predator = FactorConstant(0.8)
+
+        self.population_range = FactorConstant(FactorRange(4, 20))
+        self.min_growth_rate = FactorRange(-0.05, -0.015)
+        self.max_growth_rate = FactorRange(0.05, 0.015)
+
+        self.prey_coefficient = FactorConstant(-0.01)
+        self.predator_coefficient = FactorConstant(0.01)
+        self.max_symbiotic_relationship = FactorConstant(0.0)
+
         self.accuracy = SimulationAccuracyConfig()
         self.epochs = SimulationEpochsConfig()
 
@@ -109,12 +76,12 @@ class TestParameters(BaseProgramParameters):
             if reverse is not None and "weight" in reverse:
                 is_predator = reverse["weight"] > 0
             else:
-                is_predator = random.random() < self.percent_predator
+                is_predator = random.random() < settings.percent_predator
 
             if is_predator:
-                edge["weight"] = random.random() * self.min_growth_rate
+                edge["weight"] = random.random() * settings.min_growth_rate
             else:
-                edge["weight"] = random.random() * self.max_growth_rate
+                edge["weight"] = random.random() * settings.max_growth_rate
 
         max_predatorness = 0
         max_preyness = 0
@@ -132,18 +99,15 @@ class TestParameters(BaseProgramParameters):
 
         # Node Attributes
         for node_id, node in G.nodes.items():
-            node["population"] = random_float(
-                random, self.min_population, self.max_population
-            )
-
+            node["population"] = settings.population_range.generate(random)
             preyness = 0
             predatorness = 0
             for neighbor in G.neighbors(node_id):
                 weight = G.get_edge_data(node_id, neighbor)["weight"]
                 if weight > 0:
-                    predatorness += weight  # * self.percent_predator
+                    predatorness += weight
                 else:
-                    preyness -= weight  # * (1 - self.percent_predator)
+                    preyness -= weight
 
             # Create a self edge if one doesn't already exist
             if not G.has_edge(u=node_id, v=node_id):
@@ -153,19 +117,19 @@ class TestParameters(BaseProgramParameters):
             # Set the growth rate of each node
             if predatorness == preyness and preyness != 0:
                 if random.random() < 0.5:
-                    predatorness += 1e-10
+                    predatorness += 1e-30
                 else:
-                    preyness += 1e-10
+                    preyness += 1e-30
             if predatorness > preyness:
                 percent_predator = (predatorness - preyness) / (max_predatorness)
-                mean = self.min_growth_rate * percent_predator
-                sigma = min(abs(self.min_growth_rate - mean), abs(mean))
+                mean = settings.min_growth_rate * percent_predator
+                sigma = min(abs(settings.min_growth_rate - mean), abs(mean))
             elif predatorness < preyness:
                 percent_prey = (preyness - predatorness) / max_preyness
-                mean = self.max_growth_rate * percent_prey
-                sigma = min(abs(self.max_growth_rate - mean), abs(mean))
+                mean = settings.max_growth_rate * percent_prey
+                sigma = min(abs(settings.max_growth_rate - mean), abs(mean))
 
-            weight = -mean
+            weight = random.gauss(mean, sigma)
             while np.sign(mean) != np.sign(weight):
                 weight = random.gauss(mean, sigma)
 
@@ -176,22 +140,23 @@ class TestParameters(BaseProgramParameters):
 
     @override
     def generate_networks(self, random: Random) -> List[Tuple[Graph, object]]:
-        # Declare variables to meshgrid
-        branching_factors: List[int] = self._gen_branching_factors(random)
-        heights: List[int] = self._gen_heights(random)
-
-        settings = np.meshgrid(branching_factors, heights)
-        for i in range(len(settings)):
-            settings[i] = settings[i].flatten()
-
-        branching_factors, heights = settings
-
         networks = []
-        # for branching_factor, height in zip(*settings):
-        chosen_settings = SmallWorldSettings()
+        for i in range(self.hold_variable):
+            chosen_settings: List[FactorGenerator] = [
+                self.network_dim,
+                self.network_side_length,
+                self.percent_predator,
+                self.population_range,
+                self.min_growth_rate,
+                self.max_growth_rate,
+                self.prey_coefficient,
+                self.max_symbiotic_relationship,
+            ]
+            chosen_settings = [sett.generate(random) for sett in chosen_settings]
+            chosen_settings = SmallWorldSettings(*chosen_settings)
 
-        graph: Graph = self._generate_network(random, chosen_settings)
-        networks.append((graph, chosen_settings))
+            graph: Graph = self._generate_network(random, chosen_settings)
+            networks.append((graph, chosen_settings))
         return networks
 
     def _gen_branching_factors(self, random: Random):

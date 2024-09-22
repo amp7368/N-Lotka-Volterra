@@ -72,3 +72,7 @@ class Generation(np.ndarray[float]):
 
 class Generations(np.ndarray[Generation]):
     pass
+
+
+class FamilyLineage(np.ndarray[float]):
+    pass

@@ -67,11 +67,9 @@ class SimulationSeries:
         # Generate rest of accuracy variables then mesh
         euler_steps: List[float] = accuracy.gen_euler_steps(self.random)
         extinct_if_belows: List[float] = accuracy.gen_extinct_if_belows(self.random)
-        mesh = np.meshgrid(euler_steps, extinct_if_belows)
-        mesh = [m.flatten() for m in mesh]
 
         accuracy_list = []
-        for settings in zip(*mesh):
+        for settings in zip(euler_steps, extinct_if_belows):
             accuracy = SimulationAccuracy(
                 euler_step=settings[0],
                 extinct_if_below=settings[1],

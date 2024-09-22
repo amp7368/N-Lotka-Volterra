@@ -1,8 +1,18 @@
 from sqlalchemy import create_engine
 
+from config.parameters.small_world.small_world_parameters import SmallWorldSettings
 from program_env import program_env, program_env_file
-from store.dbase import Base, connect_database, db
+from store.dbase import Base, db
+from store.entity import danalysis_datapoint
 from util.json_utils import json_dumps
+
+
+def connect_database():
+    db.engine = create_engine(
+        program_env.database_conn.url(),
+        json_serializer=json_dumps,
+    )
+    from store.entity import dcoefficients, dparameters, drun, dspecies_run
 
 
 def confirm_delete_db():
@@ -21,14 +31,6 @@ def confirm_delete_db():
         print("Canceled database drop.")
         print(f"Reset CONFIRM_DROP_DATABASE_ONCE to 'false' in {program_env_file}")
         exit(0)
-
-
-def connect_database():
-    db.engine = create_engine(
-        program_env.database_conn.url(),
-        json_serializer=json_dumps,
-    )
-    from store.entity import dcoefficients, dparameters, drun, dspecies_run
 
 
 def init_db():

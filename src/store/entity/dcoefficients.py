@@ -1,6 +1,5 @@
 from uuid import UUID
 
-from networkx import Graph
 from sqlalchemy import Double, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
@@ -9,7 +8,7 @@ from store.entity.dspecies_run import DSpeciesRun
 
 
 class DCoefficients(Base):
-    __tablename__ = "coefficents"
+    __tablename__ = "Coefficients"
     source_id: Mapped[UUID] = mapped_column(ForeignKey(DSpeciesRun.id), nullable=False)
     source: Mapped[DSpeciesRun] = relationship(foreign_keys=source_id)
     target_id: Mapped[UUID] = mapped_column(ForeignKey(DSpeciesRun.id), nullable=False)
@@ -22,8 +21,6 @@ class DCoefficients(Base):
     ):
         self.source = source
         self.target = target
-        self.source_id = source.id
-        self.target_id = target.id
         self.source_to_target = s_to_t
         self.target_to_source = t_to_s
 

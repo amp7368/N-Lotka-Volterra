@@ -33,7 +33,9 @@ class DRun(Base):
     id: Mapped[UUID] = mapped_column(
         Uuid(), primary_key=True, insert_default=generate_run_id
     )
-    configuration_id: Mapped[UUID] = mapped_column(ForeignKey(DParameters.id))
+    configuration_id: Mapped[UUID] = mapped_column(
+        ForeignKey(DParameters.id), index=True
+    )
     configuration: Mapped[DParameters] = relationship(foreign_keys=configuration_id)
     trial_index: Mapped[int] = mapped_column(SmallInteger(), nullable=False)
     series_id: Mapped[object] = mapped_column(JSON(), nullable=False)
@@ -45,7 +47,6 @@ class DRun(Base):
     )
 
     def __init__(self, trial: SimulationTrial, configuration: DParameters):
-        self.configuration_id = configuration.id
         self.configuration = configuration
         self.trial_index = trial.index
         self.series_id = trial.series_id
@@ -57,6 +58,4 @@ class DRun(Base):
 
     @declared_attr.directive
     def __table_args__(cls):
-        return (
-            UniqueConstraint(cls.configuration_id, cls.series_hash, cls.trial_index),
-        )
+        return (UniqueConstraint("configuration_id", "series_hash", "trial_index"),)
