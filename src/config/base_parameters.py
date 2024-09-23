@@ -16,7 +16,7 @@ class SimulationEpochsConfig:
 
     def __init__(
         self,
-        epochs: int = 3,
+        epochs: int = 50000,
         iterations: int = 10,
         threads: int = 1,
     ) -> None:
@@ -40,7 +40,7 @@ class SimulationAccuracyConfig(RandomMeshVariables):
         self.max_euler_step = 0.02
         self.min_extinct_if_below = 1e-8
         self.max_extinct_if_below = 1e-12
-        self.max_time = 500
+        self.max_time = 1000
 
     def get_max_time(self) -> int:
         return self.max_time

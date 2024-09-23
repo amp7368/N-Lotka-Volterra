@@ -1,7 +1,8 @@
-from hashlib import sha3_256
 from random import Random
-from typing import List, Self
+from typing import List
 from uuid import UUID
+
+from util.hashing import hash_digest
 
 
 class Seed:
@@ -12,19 +13,10 @@ class Seed:
         self.uuid = seed
         self.random = Random(seed.bytes)
 
-    def generate_random(self) -> Random:
-        return Random(self.random.randbytes(16))
-
-    def generate_seed(self, first_bytes: bytes, *all_bytes: List[bytes]) -> Self:
+    def generate_random(self, first_bytes: bytes, *all_bytes: List[bytes]) -> Random:
         initial_seed_bytes = self.uuid.bytes
 
-        hash = sha3_256()
-        hash.update(initial_seed_bytes)
-        hash.update(first_bytes)
+        digest = hash_digest(initial_seed_bytes, first_bytes, *all_bytes)
 
-        for bytes in all_bytes:
-            hash.update(bytes)
-
-        seed_bytes = Random(hash.digest()).randbytes(16)
-        seed = UUID(bytes=seed_bytes, version=4)
-        return Seed(seed)
+        seed = Random(digest).randbytes(16)
+        return Random(seed)

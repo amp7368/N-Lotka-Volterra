@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+from model.simulation_series_id import SimulationSeriesId
+
 
 class SimulationPopulations:
     initial_populations: np.ndarray[float]
@@ -43,17 +45,23 @@ class SimulationAccuracy:
 
 
 class SimulationTrial:
+    series_id: SimulationSeriesId
     index: int
     populations: SimulationPopulations
     accuracy: SimulationAccuracy
+    settings: object
 
     def __init__(
         self,
+        series_id: SimulationSeriesId,
         index: int,
+        settings: object,
         populations: SimulationPopulations,
         accuracy: SimulationAccuracy,
     ) -> None:
+        self.series_id = series_id
         self.index = index
+        self.settings = settings
         self.populations = populations
         self.accuracy = accuracy
 
@@ -63,4 +71,8 @@ class Generation(np.ndarray[float]):
 
 
 class Generations(np.ndarray[Generation]):
+    pass
+
+
+class FamilyLineage(np.ndarray[float]):
     pass

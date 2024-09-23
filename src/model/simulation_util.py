@@ -9,6 +9,8 @@ from model.simulation_trial import (
     SimulationTrial,
 )
 
+GENERATIONS_DTYPE = np.float64
+
 
 def simulate(trial: SimulationTrial) -> Generations:
     err = np.geterrobj()
@@ -24,7 +26,7 @@ def simulate(trial: SimulationTrial) -> Generations:
     species_count: int = len(initial_populations)
 
     generations: Generations = np.zeros(
-        (species_count, accuracy.rounded_iterations()), dtype=np.float32
+        (species_count, accuracy.rounded_iterations()), dtype=GENERATIONS_DTYPE
     )
 
     steps_in_rounded: int = accuracy.steps_in_rounded()
@@ -58,7 +60,6 @@ def simulate(trial: SimulationTrial) -> Generations:
             generations[:, generation_t] = precise_generation.mean(axis=1)
     np.seterrobj(err)
     print(f"survived = {np.sum(generations[:, -1] != 0)}")
-    if np.sum(generations[:, -1] != 0) > 0:
-        plot_generations(generations, trial)
+    # plot_generations(generations, trial)
 
     return generations
