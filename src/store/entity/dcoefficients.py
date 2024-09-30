@@ -8,7 +8,7 @@ from store.entity.dspecies_run import DSpeciesRun
 
 
 class DCoefficients(Base):
-    __tablename__ = "Coefficients"
+    __tablename__ = "coefficients"
     source_id: Mapped[UUID] = mapped_column(ForeignKey(DSpeciesRun.id), nullable=False)
     source: Mapped[DSpeciesRun] = relationship(foreign_keys=source_id)
     target_id: Mapped[UUID] = mapped_column(ForeignKey(DSpeciesRun.id), nullable=False)

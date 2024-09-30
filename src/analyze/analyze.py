@@ -3,10 +3,11 @@ from typing import List, Tuple
 import numpy as np
 
 from analyze.cname import join_cname, join_description
-from analyze.eval_fn import Eval, FloatArr, NamedCol
-from analyze.scalar import scalar_eval
-from model.simulation_trial import FamilyLineage, Generations, SimulationTrial
-from model.simulation_util import GENERATIONS_DTYPE
+from analyze.eval.coefficients import coeff_evals
+from analyze.eval.scalar import scalar_eval
+from analyze.eval_fn import Eval, FloatArr
+from model.simulation_cpu import GENERATIONS_DTYPE
+from model.simulation_trial import Generations, SimulationTrial
 from store.dbase import db
 from store.entity.danalysis_datapoint import DAnalysisDatapoint
 from store.entity.dparameters import DParameters
@@ -23,7 +24,7 @@ class AnalysisPipeline[R]:
         self,
         cname: str,
         out_fn: List[Eval[R]],
-        *fns: Eval | List[Eval],
+        *fns: List[Eval],
         desc: str = "",
     ) -> None:
         self.out_fns = out_fn
@@ -35,6 +36,7 @@ class AnalysisPipeline[R]:
                 self.fns.append(fn)
         cname = join_cname(cname, *[fn.cname for fn in self.fns])
         desc = join_description(desc, *[fn.description for fn in self.fns])
+
         for fn in out_fn:
             fn.prepend(cname, desc)
 
@@ -44,6 +46,7 @@ class AnalysisPipeline[R]:
             data = fn.calc(data)
 
         cols = []
+
         for fn in self.out_fns:
             val = fn.calc(data)
             dcname = fn.get_dcname(sess)
@@ -56,24 +59,23 @@ class DataAnalysis:
     desc: str
     pipelines: List[AnalysisPipeline]
 
-    def __init__(self, cname: str, desc: str = "") -> None:
+    def __init__(
+        self, cname: str, *fns: List[List[Eval]] | List[Eval], desc: str = ""
+    ) -> None:
         self.cname = cname
         self.desc = desc
-        self.pipelines = self.create_pipelines()
 
-    def create_pipelines(self) -> List[AnalysisPipeline]:
-        return [self.__pipeline()]
-        dx1: Eval[FloatArr] = Eval(
-            np.gradient, "dx(1)", "1st derivative - change in x over time."
-        )
-        dx2: List[Eval[FloatArr]] = [
-            Eval(np.gradient, ""),
-            Eval(np.gradient, "dx(2)", "2nd derivative - change in x over time^2."),
-        ]
-        fns = [[], dx1, dx2]
-        return map(self.__pipeline, fns)
+        if len(fns) == 0:
+            self.pipelines = [self.__pipeline([])]
+            return
 
-    def __pipeline(self, *fn: List[Eval[FloatArr]]) -> AnalysisPipeline:
+        self.pipelines = []
+        for fn in fns:
+            if not isinstance(fn, list):
+                fn = [fn]
+            self.pipelines.append(self.__pipeline(fn))
+
+    def __pipeline(self, fn: List[Eval[FloatArr]]) -> AnalysisPipeline:
         return AnalysisPipeline(self.cname, scalar_eval(), *fn, desc=self.desc)
 
     def eval(self, run: DRun, sess, data) -> List[DAnalysisDatapoint]:
@@ -93,7 +95,14 @@ growth_rates = DataAnalysis(
 )
 initial_populations = DataAnalysis(
     "initial_populations",
-    "The starting population for each species",
+    desc="The starting population for each species",
+)
+
+
+coefficients = DataAnalysis(
+    "coefficients",
+    *coeff_evals(),
+    desc="The coefficients matrix",
 )
 
 
@@ -116,6 +125,7 @@ def analyze_trial(
     analysis: List[Tuple[DataAnalysis, FloatArr]] = [
         (survival_days, survival_days_data),
         (growth_rates, trial.populations.growth_rates),
+        (coefficients, trial.populations.coefficients),
         (initial_populations, trial.populations.initial_populations),
     ]
 

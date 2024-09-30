@@ -83,6 +83,20 @@ Diagonal is always 0. Growth rates are really what go in the diagnol but it's ea
 | P_2   | 0.04 | 0     | -0.02 |
 | P_3   | 0.02 | 0.04  | 0     |
 
+myself = P_3
+neighbor1 = P_1
+neighbor2 = P_2
+coefficients[my_self][neighbor1] == graph.edge(myself,neighbor1)["weight"]
+
+coefficients[my_self][neighbor1] = 0.02
+coefficients[my_self][neighbor2] = 0.04
+
+next_population[myself] = (growth[myself] \* population[myself]) +
+(coefficients[my_self][neighbor1] \* population[neighbor1] \* population[myself]) +
+(coefficients[my_self][neighbor2] \* population[neighbor2] \* population[myself])
+
+out = np.sum(coefficients, axis=1) # 0.02 + 0.04 + 0.00
+
 ### Pred-2 Prey-1
 
 <img src="./assets/Pred2_Prey1.png" alt="3 species predator prey model" width="600px" />

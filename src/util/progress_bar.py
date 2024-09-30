@@ -3,6 +3,8 @@ from typing import Callable, Iterable
 
 import numpy as np
 
+from model.simulation_trial import Generation, SimulationAccuracy
+
 
 def progress_bar(
     iterable: Iterable,

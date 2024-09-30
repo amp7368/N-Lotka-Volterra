@@ -1,5 +1,6 @@
 import json
-from os import path
+import sys
+from os import cpu_count, path
 from types import SimpleNamespace
 from typing import List, Optional, override
 from uuid import UUID, uuid4
@@ -52,11 +53,18 @@ class ProgramEnvRun(ConfigInit):
 
     master_seed: Optional[str]
     series_id: List[SimulationSeriesId] | Optional[SimulationSeriesId]
+    thread_count: int
 
     def __init__(self) -> None:
         self.last_seed_used = []
         self.master_seed = None
         self.series_id = None
+        self.thread_count = -1
+
+    def get_thread_count(self) -> int:
+        if self.thread_count > 0:
+            return self.thread_count
+        return cpu_count()
 
     @override
     def on_config_load(self) -> None:
@@ -103,7 +111,7 @@ def _load_config():
     if not path.exists(program_env_file):
         write_file(ProgramEnv(), program_env_file)
         print(f"Please configure recently created config file: {program_env_file}.")
-        exit(1)
+        sys.exit(1)
 
     with open(program_env_file, "r") as file:
         try:
@@ -112,7 +120,7 @@ def _load_config():
             print(
                 f"Please correctly format {file.name}. Or delete the file to regenerate"
             )
-            exit(1)
+            sys.exit(1)
     config: ProgramEnv = merge_obj(ProgramEnv(), file_json)
 
     # Save a copy of config with 'before_save_hook()' being called.
@@ -122,7 +130,7 @@ def _load_config():
 
     if config.database_conn.is_default():
         print(f"Please configure {file.name}. The databaseConnection is incomplete")
-        exit(1)
+        sys.exit(1)
     return config
 
 

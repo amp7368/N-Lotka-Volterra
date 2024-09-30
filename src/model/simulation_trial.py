@@ -35,9 +35,9 @@ class SimulationAccuracy:
         self.rounded_euler_step = steps_in_rounded * euler_step
 
     def iterations(self) -> int:
-        return self.rounded_iterations() * self.steps_in_rounded()
+        return self.rounded_iterations() * self.steps_in_precise()
 
-    def steps_in_rounded(self) -> int:
+    def steps_in_precise(self) -> int:
         return int(self.rounded_euler_step // self.euler_step)
 
     def rounded_iterations(self) -> int:

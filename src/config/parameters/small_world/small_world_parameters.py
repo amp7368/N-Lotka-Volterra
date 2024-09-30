@@ -11,7 +11,7 @@ from config.base_parameters import (
 )
 from config.parameters.small_world.small_world_trial_settings import SmallWorldSettings
 from config.settings_factor import FactorConstant, FactorGenerator
-from config.settings_generator import ConstantSettings, FactorRange, SettingsGenerator
+from config.settings_generator import FactorRange, SettingsGenerator
 from util.random_util import random_int
 
 
@@ -158,11 +158,3 @@ class TestParameters(BaseProgramParameters):
             graph: Graph = self._generate_network(random, chosen_settings)
             networks.append((graph, chosen_settings))
         return networks
-
-    def _gen_branching_factors(self, random: Random):
-        return self.gen_ints(
-            random, self.min_branching_factor, self.max_branching_factor
-        )
-
-    def _gen_heights(self, random: Random):
-        return self.gen_ints(random, self.min_height, self.max_height)

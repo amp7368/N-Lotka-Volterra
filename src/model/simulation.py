@@ -1,13 +1,11 @@
 from random import Random
 from typing import List, Tuple
-from uuid import UUID
 
-import numpy as np
 from networkx import Graph
 
 from config.base_parameters import SimulationAccuracyConfig
 from config.parameters_api import ProgramParametersApi
-from model.population_util import graph_to_matrix
+from model.graph_util import graph_to_matrix
 from model.simulation_series_id import SimulationSeriesId
 from model.simulation_trial import (
     SimulationAccuracy,
