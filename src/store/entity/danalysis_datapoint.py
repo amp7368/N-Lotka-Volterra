@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import Double, ForeignKey, PrimaryKeyConstraint, UniqueConstraint
+from sqlalchemy import Double, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from store.dbase import Base

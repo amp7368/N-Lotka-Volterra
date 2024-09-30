@@ -1,9 +1,15 @@
 name: lotka
 channels:
     - conda
+    - conda-forge
     - defaults
 dependencies:
     - python=3.12.3
+    - pip
+    - numba
+    - cuda-nvcc
+    - cuda-nvrtc
+    - cuda-version>=12.0
     - pip:
           - numpy==1.26.4
           - matplotlib==3.8.4

@@ -51,7 +51,7 @@ def merge_obj(merge_onto: object, merge_from: SimpleNamespace, path=[]):
                     merge_from.__dict__[key],
                     path + [str(key)],
                 )
-            elif not isinstance(from_val, type(onto_val)):
+            elif onto_val is not None and not isinstance(from_val, type(onto_val)):
                 fullpath = ".".join(path + [str(key)])
                 raise Exception(
                     f"Conflict at '{fullpath}'. '{onto_val}' <- '{from_val}'"

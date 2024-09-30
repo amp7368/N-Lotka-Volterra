@@ -1,11 +1,11 @@
-from abc import ABC
 from random import Random
 from typing import List
 from uuid import UUID
 
 from networkx import Graph
 
-from util.random_util import RandomMeshVariables, random_float, random_int
+from program_env import program_env
+from util.random_util import RandomMeshVariables
 
 
 class SimulationEpochsConfig:
@@ -18,11 +18,10 @@ class SimulationEpochsConfig:
         self,
         epochs: int = 50000,
         iterations: int = 10,
-        threads: int = 1,
     ) -> None:
         self.epochs = epochs
         self.iterations = iterations
-        self.threads = threads
+        self.threads = program_env.run.get_thread_count()
 
 
 class SimulationAccuracyConfig(RandomMeshVariables):

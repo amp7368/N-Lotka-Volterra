@@ -1,12 +1,9 @@
-import json
-from base64 import b64decode, b64encode
+from base64 import b64encode
 from datetime import datetime
-from hashlib import sha3_256
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
-    BLOB,
     CHAR,
     JSON,
     TIMESTAMP,
@@ -52,7 +49,7 @@ class DParameters(Base):
         # TODO check that this works by inserting False
         return (
             UniqueConstraint(cls.hash, cls.is_global),
-            CheckConstraint(cls.is_global != False),
+            CheckConstraint(cls.is_global),
         )
 
     def __init__(self, seed: UUID, parameters: object):

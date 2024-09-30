@@ -25,7 +25,6 @@ def plot_generations(generations: Generations, trial: SimulationTrial):
 
     x = np.arange(0, ticks) * accuracy.rounded_euler_step
 
-    fig = plt.gcf()
     for i in range(species_count):
         # Color-gradient based on the growth rates (green=positive growth rate, red=negative growth rate)
         perc_herbivore = growth_rates[i]

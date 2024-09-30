@@ -34,6 +34,6 @@ class Eval[R]:
     def get_dcname(self, sess: Session):
         if self.dcname is None:
             self.dcname = get_column(self.cname, self.description)
-        if not self.dcname in sess:
+        if self.dcname not in sess:
             sess.add(self.dcname)
         return self.dcname

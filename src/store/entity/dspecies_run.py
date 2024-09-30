@@ -11,7 +11,9 @@ class DSpeciesRun(Base):
     __tablename__ = "species_run"
     id: Mapped[Uuid] = mapped_column(Uuid(), primary_key=True)
     species_index: Mapped[SmallInteger] = mapped_column(SmallInteger(), nullable=False)
-    run_id: Mapped[Uuid] = mapped_column(Uuid, ForeignKey(DRun.id), nullable=False)
+    run_id: Mapped[Uuid] = mapped_column(
+        Uuid, ForeignKey(DRun.id), nullable=False, index=True
+    )
 
     growth_rate: Mapped[Double] = mapped_column(Double(), nullable=False)
     initial_population: Mapped[Double] = mapped_column(Double(), nullable=False)
