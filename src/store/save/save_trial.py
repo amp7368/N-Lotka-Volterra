@@ -1,4 +1,7 @@
-from model.simulation_trial import SimulationTrial
+import numpy as np
+
+from model.simulation_cpu import GENERATIONS_DTYPE
+from model.simulation_trial import Generations, SimulationTrial
 from store.dbase import db
 from store.entity.dcoefficients import DCoefficients
 from store.entity.dparameters import DParameters
@@ -6,7 +9,13 @@ from store.entity.drun import DRun
 from store.entity.dspecies_run import DSpeciesRun
 
 
-def save_trial(dparameters: DParameters, trial: SimulationTrial) -> DRun:
+def save_trial(
+    dparameters: DParameters, trial: SimulationTrial, generations: Generations
+) -> DRun:
+    survival_days = np.where(generations != -1, generations, 0)
+    survival_days = np.count_nonzero(survival_days, axis=1).astype(GENERATIONS_DTYPE)
+    survival_days *= trial.accuracy.euler_step
+
     with db.sess() as sess:
         populations = trial.populations
         coefficients = populations.coefficients
@@ -21,7 +30,13 @@ def save_trial(dparameters: DParameters, trial: SimulationTrial) -> DRun:
         for species_id in range(spec_count):
             initial_population = populations.initial_populations[species_id]
             growth_rate = populations.growth_rates[species_id]
-            species = DSpeciesRun(drun, species_id, growth_rate, initial_population)
+            species = DSpeciesRun(
+                drun,
+                species_id,
+                growth_rate,
+                initial_population,
+                survival_days[species_id],
+            )
             sess.add(species)
             all_species.append(species)
         sess.commit()
@@ -38,4 +53,4 @@ def save_trial(dparameters: DParameters, trial: SimulationTrial) -> DRun:
                 )
                 sess.add(coeff)
         sess.commit()
-        return drun
+    return drun

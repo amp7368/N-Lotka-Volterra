@@ -40,15 +40,21 @@ def write_file(json_obj, file: str, pretty: bool = True) -> None:
 
 
 def merge_obj(merge_onto: object, merge_from: SimpleNamespace, path=[]):
-    for key in merge_from.__dict__:
-        from_val = merge_from.__dict__[key]
-        if key in merge_onto.__dict__:
+    from_is_dict = isinstance(merge_from, dict)
+    onto_is_dict = isinstance(merge_onto, dict)
+    merge_from_dict: dict = merge_from if from_is_dict else merge_from.__dict__
+    merge_onto_dict: dict = merge_onto if onto_is_dict else merge_onto.__dict__
+
+    for key in merge_from_dict:
+        from_val = merge_from_dict[key]
+        if key in merge_onto_dict:
             # Merge the values
-            onto_val = merge_onto.__dict__[key]
-            if hasattr(onto_val, "__dict__") and hasattr(from_val, "__dict__"):
+            onto_val = merge_onto_dict[key]
+            is_obj = hasattr(onto_val, "__dict__") and hasattr(from_val, "__dict__")
+            if is_obj or isinstance(onto_val, dict):
                 merge_obj(
-                    merge_onto.__dict__[key],
-                    merge_from.__dict__[key],
+                    onto_val,
+                    from_val,
                     path + [str(key)],
                 )
             elif onto_val is not None and not isinstance(from_val, type(onto_val)):

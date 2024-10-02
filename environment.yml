@@ -6,15 +6,19 @@ channels:
 dependencies:
     - python=3.12.3
     - pip
+    # Required to test
     - numba
+    # dependencies to use Nvidia GPU
     - cuda-nvcc
     - cuda-nvrtc
     - cuda-version>=12.0
+    # pip dependencies
     - pip:
+          # math utils
           - numpy==1.26.4
           - matplotlib==3.8.4
-          - argparse==1.4.0
+          # Graph/network building. Used to generate different types of networks
           - networkx==3.3
+          # Interacting and saving data to a database
           - sqlalchemy==2.0.34
-          - asyncio==3.4.3
-          - psycopg2==2.9.9
+          - psycopg2==2.9.9 # Used for postgres connections
