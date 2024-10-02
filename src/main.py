@@ -34,7 +34,6 @@ class ExecuteEpochs:
         self.active_tasks = 0
         self.max_tasks = config.epochs.threads
         self.lock = Lock()
-        self.max_iteration = 3
 
     def locked_increment(self):
         self.iteration += 1
