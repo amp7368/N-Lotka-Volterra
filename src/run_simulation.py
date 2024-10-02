@@ -14,7 +14,6 @@ from util.write_simulation import write_generations, write_meta_csv
 def choose_simulate_fn() -> Callable[[SimulationTrial], Generations]:
     import numba.cuda
 
-    global simulate
     if numba.cuda.is_available():
         from model.simulation_gpu import simulate_gpu
 
@@ -37,12 +36,12 @@ SHOULD_WRITE_SIMULATIONS: bool = False
 executor = ThreadPoolExecutor(max_workers=2)
 
 
-def run(
+def save_and_analyze(
     trial: SimulationTrial,
     dparameters: DParameters,
     generations: Generations,
 ):
-    drun = save_trial(dparameters, trial)
+    drun = save_trial(dparameters, trial, generations)
     analyze_trial(dparameters, drun, trial, generations)
 
 
@@ -54,7 +53,7 @@ def run_trial(
 ):
     generations: Generations = simulate(trial)
 
-    executor.submit(run, trial, dparameters, generations)
+    executor.submit(save_and_analyze, trial, dparameters, generations)
 
     if not SHOULD_WRITE_SIMULATIONS:
         return

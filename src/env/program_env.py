@@ -5,46 +5,13 @@ from types import SimpleNamespace
 from typing import List, Optional, override
 from uuid import UUID, uuid4
 
-from sqlalchemy import URL
-
+from env.db_connection import (
+    ProgramEnvConn,
+    ProgramEnvPostgresConn,
+    ProgramEnvSQLiteConn,
+)
 from model.simulation_series_id import SimulationSeriesId
 from util.json_utils import ConfigInit, merge_obj, write_file
-
-
-class ProgramEnvConn:
-    username: str
-    password: str
-    host: str
-    port: int
-    database: str
-    driver: str
-
-    def __init__(self) -> None:
-        self.username = ""
-        self.password = ""
-        self.host = "localhost"
-        self.port = 5432
-        self.database = "NLotka"
-        self.driver = "postgresql"
-
-    def url(self) -> URL:
-        return URL.create(
-            self.driver,
-            self.username,
-            self.password,
-            self.host,
-            self.port,
-            self.database,
-        )
-
-    def is_default(self) -> bool:
-        return (
-            len(self.username) == 0
-            and len(self.password) == 0
-            and self.host == "localhost"
-            and self.port == 5432
-            and self.database == "NLotka"
-        )
 
 
 class ProgramEnvRun(ConfigInit):
@@ -59,7 +26,7 @@ class ProgramEnvRun(ConfigInit):
         self.last_seed_used = []
         self.master_seed = None
         self.series_id = None
-        self.thread_count = -1
+        self.thread_count = 1
 
     def get_thread_count(self) -> int:
         if self.thread_count > 0:
@@ -88,19 +55,35 @@ class ProgramEnvRun(ConfigInit):
 
 
 class ProgramEnv:
-    database_conn: ProgramEnvConn
+    connections: dict[str, ProgramEnvConn]
+    active_connection: str
     CONFIRM_DROP_DATABASE_ONCE: bool
     is_production: bool
     run: ProgramEnvRun
 
     def __init__(self) -> None:
-        self.database_conn = ProgramEnvConn()
+        self.connections = {
+            "postgres": ProgramEnvPostgresConn(),
+            "sqlite": ProgramEnvSQLiteConn(),
+        }
+        self.active_connection = "sqlite"
         self.run = ProgramEnvRun()
         self.is_production = True
         self.CONFIRM_DROP_DATABASE_ONCE = False
 
     def before_save_hook(self) -> None:
         self.CONFIRM_DROP_DATABASE_ONCE = False
+
+    def database_conn(self) -> ProgramEnvConn:
+        active = self.active_connection
+        if active not in self.connections:
+            listed = [f"'{conn}'" for conn in self.connections.keys()]
+            listed = ", ".join(listed)
+            print(
+                f"'{active}' is not one of the available connections. Please configure {program_env_file}.active_connection to one of the keys in {program_env_file}.connections. Currently, the listed connections are: {listed}"
+            )
+            sys.exit(1)
+        return self.connections[active]
 
     def save(self) -> None:
         self.before_save_hook()
@@ -128,7 +111,7 @@ def _load_config():
     # so that the initialization can follow the drop database procedure before it's reverted
     merge_obj(ProgramEnv(), file_json).save()
 
-    if config.database_conn.is_default():
+    if config.database_conn().is_default():
         print(f"Please configure {file.name}. The databaseConnection is incomplete")
         sys.exit(1)
     return config

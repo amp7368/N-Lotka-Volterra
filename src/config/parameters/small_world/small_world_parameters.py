@@ -15,7 +15,7 @@ from config.settings_generator import FactorRange, SettingsGenerator
 from util.random_util import random_int
 
 
-class TestParameters(BaseProgramParameters):
+class SmallWorldParameters(BaseProgramParameters):
     # network structure
     network_dim: FactorGenerator[int]
     network_side_length: FactorGenerator[int]
@@ -38,13 +38,13 @@ class TestParameters(BaseProgramParameters):
     accuracy: SimulationAccuracyConfig
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__("small_world", "ec969da9-ac98-4e73-8bb1-cbbed347b3a4")
         self.network_dim = FactorConstant(2)
-        self.network_side_length = FactorConstant(10)
+        self.network_side_length = FactorRange(5, 30)
 
         self.percent_predator = FactorConstant(0.8)
 
-        self.population_range = FactorConstant(FactorRange(4, 20))
+        self.population_range = FactorConstant(FactorRange(4, 20, inclusive=True))
         self.min_growth_rate = FactorRange(-0.05, -0.015)
         self.max_growth_rate = FactorRange(0.05, 0.015)
 
@@ -141,7 +141,7 @@ class TestParameters(BaseProgramParameters):
     @override
     def generate_networks(self, random: Random) -> List[Tuple[Graph, object]]:
         networks = []
-        for i in range(self.hold_variable):
+        for i in range(self.gen_count()):
             chosen_settings: List[FactorGenerator] = [
                 self.network_dim,
                 self.network_side_length,

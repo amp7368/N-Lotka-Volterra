@@ -17,9 +17,15 @@ class DSpeciesRun(Base):
 
     growth_rate: Mapped[Double] = mapped_column(Double(), nullable=False)
     initial_population: Mapped[Double] = mapped_column(Double(), nullable=False)
+    days_survived: Mapped[Double] = mapped_column(Double(), nullable=False)
 
     def __init__(
-        self, run: DRun, species: int, growth_rate: float, initial_population: float
+        self,
+        run: DRun,
+        species: int,
+        growth_rate: float,
+        initial_population: float,
+        days_survived: int,
     ):
         id = int.from_bytes(run.id.bytes) + species
         self.id = UUID(int=id, version=4)
@@ -27,6 +33,7 @@ class DSpeciesRun(Base):
         self.run_id = run.id
         self.growth_rate = growth_rate
         self.initial_population = initial_population
+        self.days_survived = days_survived
 
     @declared_attr.directive
     def __table_args__(cls):

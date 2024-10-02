@@ -2,14 +2,14 @@ import sys
 
 from sqlalchemy import create_engine
 
-from program_env import program_env, program_env_file
+from env.program_env import program_env, program_env_file
 from store.dbase import Base, db
 from util.json_utils import json_dumps
 
 
 def connect_database():
     db.engine = create_engine(
-        program_env.database_conn.url(),
+        program_env.database_conn().url(),
         json_serializer=json_dumps,
     )
     from store.entity import (

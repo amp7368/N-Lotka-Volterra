@@ -15,7 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 
-from program_env import program_env
+from env.program_env import program_env
 from store.dbase import Base
 from util.hashing import hash_digest
 from util.json_utils import json_dumps

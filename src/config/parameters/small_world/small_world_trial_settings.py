@@ -10,6 +10,7 @@ class SmallWorldSettings:
     # network structure
     network_dim: int
     network_side_length: int
+    derived_species_count: int
 
     # Aggregate Node data
     percent_predator: float
@@ -37,6 +38,7 @@ class SmallWorldSettings:
     ) -> None:
         self.network_dim = int(network_dim)
         self.network_side_length = int(network_side_length)
+        self.derived_species_count = int(network_side_length**2)
         self.percent_predator = percent_predator
         self.population_range = population_range
         self.min_growth_rate = min_growth_rate

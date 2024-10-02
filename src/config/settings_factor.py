@@ -26,10 +26,12 @@ class FactorRange(FactorGenerator[float]):
     min_val: float
     max_val: float
 
-    def __init__(self, a, b) -> None:
+    def __init__(self, a, b, inclusive=False) -> None:
         super().__init__("factor_range")
         self.min_val = min(a, b)
         self.max_val = max(a, b)
+        if inclusive:
+            self.max_val += 1
 
     @override
     def generate(self, random: Random) -> float:
