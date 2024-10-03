@@ -22,20 +22,43 @@ class FactorGenerator[R](ABC):
         raise "Not implemented!"
 
 
-class FactorRange(FactorGenerator[float]):
+class FactorRangeFloat(FactorGenerator[float]):
     min_val: float
     max_val: float
 
-    def __init__(self, a, b, inclusive=False) -> None:
-        super().__init__("factor_range")
+    def __init__(self, a: float, b: float) -> None:
+        super().__init__("factor_range_float")
         self.min_val = min(a, b)
         self.max_val = max(a, b)
-        if inclusive:
-            self.max_val += 1
 
     @override
     def generate(self, random: Random) -> float:
         return random.uniform(self.min_val, self.max_val)
+
+    @override
+    def as_columns(self, run: DRun, prefix: str) -> List[DAnalysisDatapoint]:
+        min_val_col = get_column(f"{prefix}.range(min)")
+        max_val_col = get_column(f"{prefix}.range(max)")
+        return [
+            DAnalysisDatapoint(run, min_val_col, self.min_val),
+            DAnalysisDatapoint(run, max_val_col, self.max_val),
+        ]
+
+
+class FactorRangeInt(FactorGenerator[int]):
+    min_val: int
+    max_val: int
+
+    def __init__(self, a: int, b: int, inclusive=True) -> None:
+        super().__init__("factor_range_int")
+        self.min_val = min(a, b)
+        self.max_val = max(a, b)
+        if not inclusive:
+            self.max_val -= 1
+
+    @override
+    def generate(self, random: Random) -> int:
+        return random.randint(self.min_val, self.max_val)
 
     @override
     def as_columns(self, run: DRun, prefix: str) -> List[DAnalysisDatapoint]:

@@ -2,23 +2,24 @@ from random import Random
 from typing import List, Tuple, override
 
 import numpy as np
-from networkx import Graph, navigable_small_world_graph
+from networkx import Graph, powerlaw_cluster_graph
 
 from config.base_parameters import (
     BaseProgramParameters,
     SimulationAccuracyConfig,
     SimulationEpochsConfig,
 )
-from config.parameters.small_world.small_world_trial_settings import SmallWorldSettings
+from config.parameters.powerlaw.powerlaw_trial_settings import PowerLawSettings
 from config.settings_factor import FactorConstant, FactorGenerator, FactorRangeInt
 from config.settings_generator import FactorRangeFloat, SettingsGenerator
 from util.random_util import random_int
 
 
-class SmallWorldParameters(BaseProgramParameters):
+class PowerLawParameters(BaseProgramParameters):
     # network structure
-    network_dim: FactorGenerator[int]
-    network_side_length: FactorGenerator[int]
+    species_count: FactorGenerator[int]
+    connection_m_perc: FactorGenerator[float]
+    connection_p: FactorGenerator[float]
 
     # Aggregate Node data
     percent_predator: FactorGenerator[float]
@@ -38,9 +39,10 @@ class SmallWorldParameters(BaseProgramParameters):
     accuracy: SimulationAccuracyConfig
 
     def __init__(self) -> None:
-        super().__init__("small_world", "ec969da9-ac98-4e73-8bb1-cbbed347b3a4")
-        self.network_dim = FactorConstant(2)
-        self.network_side_length = FactorRangeInt(5, 30)
+        super().__init__("powerlaw", "09c158c3-18f3-40a4-80fe-2b855bff538f")
+        self.species_count = FactorRangeInt(10, 625)
+        self.connection_m_perc = FactorRangeFloat(0, 1)
+        self.connection_p = FactorRangeFloat(0, 1)
 
         self.percent_predator = FactorConstant(0.8)
 
@@ -55,11 +57,12 @@ class SmallWorldParameters(BaseProgramParameters):
         self.accuracy = SimulationAccuracyConfig()
         self.epochs = SimulationEpochsConfig()
 
-    def _generate_network(self, random: Random, settings: SmallWorldSettings) -> Graph:
-        G: Graph = navigable_small_world_graph(
-            settings.network_side_length,
+    def _generate_network(self, random: Random, settings: PowerLawSettings) -> Graph:
+        G: Graph = powerlaw_cluster_graph(
+            settings.species_count,
+            m=settings.connection_m,
+            p=settings.connection_p,
             seed=random_int(random),
-            dim=settings.network_dim,
         )
 
         # Verify relationships are not one way.
@@ -143,8 +146,9 @@ class SmallWorldParameters(BaseProgramParameters):
         networks = []
         for i in range(self.gen_count()):
             chosen_settings: List[FactorGenerator] = [
-                self.network_dim,
-                self.network_side_length,
+                self.species_count,
+                self.connection_m_perc,
+                self.connection_p,
                 self.percent_predator,
                 self.population_range,
                 self.min_growth_rate,
@@ -153,7 +157,7 @@ class SmallWorldParameters(BaseProgramParameters):
                 self.max_symbiotic_relationship,
             ]
             chosen_settings = [sett.generate(random) for sett in chosen_settings]
-            chosen_settings = SmallWorldSettings(*chosen_settings)
+            chosen_settings = PowerLawSettings(*chosen_settings)
 
             graph: Graph = self._generate_network(random, chosen_settings)
             networks.append((graph, chosen_settings))

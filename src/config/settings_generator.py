@@ -4,7 +4,7 @@ from typing import List, override
 from config.settings_factor import (
     FactorConstant,
     FactorGenerator,
-    FactorRange,
+    FactorRangeFloat,
 )
 from store.entity.danalysis_datapoint import DAnalysisDatapoint
 from store.entity.drun import DRun
@@ -49,7 +49,7 @@ class ConstantSettings[R](SettingsGenerator[R]):
         return FactorConstant(self.val)
 
 
-class RangeGenerator(SettingsGenerator[FactorRange]):
+class RangeGenerator(SettingsGenerator[FactorRangeFloat]):
     center_mean: float
     center_std: float
     min_range_diff: float
@@ -69,9 +69,9 @@ class RangeGenerator(SettingsGenerator[FactorRange]):
         self.max_range_diff = max_range_diff
 
     @override
-    def generate(self, random: Random) -> FactorRange:
+    def generate(self, random: Random) -> FactorRangeFloat:
         half_range_diff = random.uniform(self.max_range_diff, self.min_range_diff) / 2
         center = random.gauss(self.center_mean, self.center_std)
         lower = center - half_range_diff
         upper = center + half_range_diff
-        return FactorRange(lower, upper)
+        return FactorRangeFloat(lower, upper)
