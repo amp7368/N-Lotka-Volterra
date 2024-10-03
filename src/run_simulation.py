@@ -33,7 +33,7 @@ simulate = choose_simulate_fn()
 SHOULD_WRITE_SIMULATIONS: bool = False
 
 
-executor = ThreadPoolExecutor(max_workers=2)
+simulation_save_executor = ThreadPoolExecutor(max_workers=2)
 
 
 def save_and_analyze(
@@ -53,7 +53,7 @@ def run_trial(
 ):
     generations: Generations = simulate(trial)
 
-    executor.submit(save_and_analyze, trial, dparameters, generations)
+    simulation_save_executor.submit(save_and_analyze, trial, dparameters, generations)
 
     if not SHOULD_WRITE_SIMULATIONS:
         return

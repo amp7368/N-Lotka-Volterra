@@ -7,7 +7,7 @@ from traceback import print_exception
 from config.load_parameters import load_arguments
 from config.parameters_api import ProgramParametersApi
 from model.simulation_series_id import SimulationSeriesId
-from run_simulation import run_simulation
+from run_simulation import run_simulation, simulation_save_executor
 from store.dbase import db
 from store.entity.dparameters import DParameters
 from store.init_db import init_db
@@ -41,8 +41,10 @@ class ExecuteEpochs:
             return True
         if self.epoch >= self.max_epochs:
             if self.active_tasks == 0:
+                simulation_save_executor.shutdown()
                 self.complete_event.set()
                 self.executor.shutdown()
+
             return False
 
         self.iteration = 0
@@ -57,7 +59,8 @@ class ExecuteEpochs:
             self.active_tasks -= 1
         self.verify_full()
 
-    def run(self, series_id):
+    def run(self, series_id: SimulationSeriesId):
+        """A job to run the simulation"""
         try:
             run_simulation(self.config, self.dparameters, series_id)
         except Exception as e:

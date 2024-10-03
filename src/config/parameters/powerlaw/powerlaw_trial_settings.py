@@ -6,11 +6,12 @@ from store.entity.danalysis_datapoint import DAnalysisDatapoint
 from store.entity.drun import DRun
 
 
-class SmallWorldSettings:
+class PowerLawSettings:
     # network structure
-    network_dim: int
-    network_side_length: int
-    derived_species_count: int
+    species_count: int
+    connection_m_perc: float
+    connection_m: int
+    connection_p: float
 
     # Aggregate Node data
     percent_predator: float
@@ -27,8 +28,9 @@ class SmallWorldSettings:
 
     def __init__(
         self,
-        network_dim,
-        network_side_length,
+        species_count,
+        connection_m_perc,
+        connection_p,
         percent_predator,
         population_range,
         min_growth_rate,
@@ -36,9 +38,11 @@ class SmallWorldSettings:
         prey_coefficient,
         max_symbiotic_relationship,
     ) -> None:
-        self.network_dim = network_dim
-        self.network_side_length = network_side_length
-        self.derived_species_count = network_side_length * network_side_length
+        self.species_count = species_count
+        self.connection_m_perc = connection_m_perc
+        # connection_m_perc is in range [0,1) exclusive to 1
+        self.connection_m = int(connection_m_perc * self.species_count) + 1
+        self.connection_p = connection_p
         self.percent_predator = percent_predator
         self.population_range = population_range
         self.min_growth_rate = min_growth_rate
@@ -47,8 +51,9 @@ class SmallWorldSettings:
 
     def as_columns(self, run: DRun) -> List[DAnalysisDatapoint]:
         constant_cols = [
-            "network_dim",
-            "network_side_length",
+            "species_count",
+            "connection_m_perc",
+            "connection_p",
             "percent_predator",
             "min_growth_rate",
             "max_growth_rate",

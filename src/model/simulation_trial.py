@@ -21,6 +21,8 @@ class SimulationAccuracy:
     """How many timesteps should each simulation run for"""
     extinct_if_below: float
 
+    rounded_euler_step: float
+
     def __init__(
         self,
         euler_step: float = 0.005,
@@ -31,6 +33,7 @@ class SimulationAccuracy:
         self.euler_step = euler_step
         self.max_time = max_time
         self.extinct_if_below = extinct_if_below
+        self.goal_rounded_euler_step = goal_rounded_euler_step
         steps_in_rounded = max(1, math.ceil(goal_rounded_euler_step / euler_step))
         self.rounded_euler_step = steps_in_rounded * euler_step
 
